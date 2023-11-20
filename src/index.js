@@ -22,14 +22,22 @@ const options = {
   root: null,
   threshold: 0.3,
 };
-const observer = new IntersectionObserver(onLoadMoreBtnClick, options);
+const observer = new IntersectionObserver(onLoadMoreBtnIntersect, options);
+observer.observe(loadMoreBtn);
 
-function onSearch(e) {
+async function onLoadMoreBtnIntersect(entries) {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      onLoadMoreBtnClick();
+    }
+  });
+}
+
+async function onSearch(e) {
   e.preventDefault();
 
   galleryWrapper.innerHTML = '';
-  pixabayApi.query =
-    e.currentTarget.elements.searchQuery.value.trim().toLowerCase();
+  pixabayApi.query = e.currentTarget.elements.searchQuery.value.trim().toLowerCase();
   pixabayApi.resetPage();
 
   if (pixabayApi.query === '') {
@@ -38,20 +46,18 @@ function onSearch(e) {
   }
 
   isShown = 0;
-  fetchGallery();
-  onGetGallery(hits);
+  await fetchGallery();
 }
 
-function onLoadMoreBtnClick() {
+async function onLoadMoreBtnClick() {
   pixabayApi.incrementPage();
-  fetchGallery();
+  await fetchGallery();
 }
 
 async function fetchGallery() {
   loadMoreBtn.classList.add('is-hidden');
 
-  const result = await pixabayApi.fetchGallery();
-  const { hits, total } = result;
+  const { hits, totalHits } = await pixabayApi.fetchGallery();
   isShown += hits.length;
 
   if (!hits.length) {
@@ -63,17 +69,20 @@ async function fetchGallery() {
   }
 
   onGetGallery(hits);
-  isShown += hits.length;
 
-  if (isShown < total) {
-    Notify.success(`Hooray! We found ${total} images !!!`);
-    loadMoreBtn.classList.remove('is-hidden');
-  }
-
-  if (isShown >= total) {
+  if (isShown < totalHits) {
+      Notify.success(`Hooray! We found ${totalHits} images !`);
+      loadMoreBtn.classList.remove('is-hidden');
+  } 
+  if (isShown >= totalHits) {
     Notify.info("We're sorry, but you've reached the end of search results.");
   }
-}
+   if (hits.length < pixabayApi.PER_PAGE) {
+    Notify.info("We're sorry, but you've reached the end of search results.");
+    return;
+  }
+  }
+  
 
 function onGetGallery(elements) {
   const markup = elements

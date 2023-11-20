@@ -27,9 +27,11 @@ export default class PixabayApi {
         };
         try {
             const response = await axios(axiosOptions);
-
             const data = response.data;
-
+            if (data.hits.length === 0) {
+                this.resetEndOfHits();
+                return null;
+        }
             this.incrementPage();
             return data;
         } catch (error) {
