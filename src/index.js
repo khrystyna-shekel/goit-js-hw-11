@@ -70,19 +70,17 @@ async function fetchGallery() {
 
   onGetGallery(hits);
 
-  if (isShown < totalHits) {
-      Notify.success(`Hooray! We found ${totalHits} images !`);
-      loadMoreBtn.classList.remove('is-hidden');
-  } 
-  if (isShown >= totalHits) {
-    Notify.info("We're sorry, but you've reached the end of search results.");
-  }
-   if (hits.length < pixabayApi.PER_PAGE) {
-    Notify.info("We're sorry, but you've reached the end of search results.");
-    return;
-  }
-  }
   
+  if (isShown < totalHits || isShown < 40) {
+    Notify.success(`Hooray! We found ${totalHits} images!`);
+    loadMoreBtn.classList.remove('is-hidden');
+  } else {
+    loadMoreBtn.classList.add('is-hidden');
+  }
+  if (isShown >= totalHits) {
+   Notify.info("We're sorry, but you've reached the end of search results.");
+  }
+}
 
 function onGetGallery(elements) {
   const markup = elements
