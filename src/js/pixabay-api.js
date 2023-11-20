@@ -32,7 +32,6 @@ export default class PixabayApi {
                 this.resetEndOfHits();
                 return null;
         }
-            this.incrementPage();
             return data;
         } catch (error) {
             console.error('Error fetching data:', error);

@@ -1,21 +1,19 @@
-import './styles.css';
-import PixabayApi from './pixabay-api';
-import { lightbox } from './lightbox';
+import PixabayApi from './js/pixabay-api';
+import { lightbox } from './js/lightbox';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
 const refs = {
   searchForm: document.querySelector('.search-form'),
   galleryWrapper: document.querySelector('.gallery'),
-  loadMoreBtn: document.querySelector('.load-more'),
+  scroll: document.querySelector('.scroll'),
 };
 
-const { searchForm, galleryWrapper, loadMoreBtn } = refs;
+const { searchForm, galleryWrapper, scroll } = refs;
 
 let isShown = 0;
 const pixabayApi = new PixabayApi();
 
 searchForm.addEventListener('submit', onSearch);
-loadMoreBtn.addEventListener('click', onLoadMoreBtnClick);
 
 const options = {
   rootMargin: '100px',
@@ -23,12 +21,11 @@ const options = {
   threshold: 0.3,
 };
 const observer = new IntersectionObserver(onLoadMoreBtnIntersect, options);
-observer.observe(loadMoreBtn);
 
 async function onLoadMoreBtnIntersect(entries) {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
-      onLoadMoreBtnClick();
+      onLoadMoreData();
     }
   });
 }
@@ -49,16 +46,18 @@ async function onSearch(e) {
   await fetchGallery();
 }
 
-async function onLoadMoreBtnClick() {
+async function onLoadMoreData() {
   pixabayApi.incrementPage();
   await fetchGallery();
 }
 
 async function fetchGallery() {
-  loadMoreBtn.classList.add('is-hidden');
-
   const { hits, totalHits } = await pixabayApi.fetchGallery();
   isShown += hits.length;
+
+  if (totalHits > 40) {
+    observer.observe(scroll);
+  }
 
   if (!hits.length) {
     Notify.failure(
@@ -70,17 +69,16 @@ async function fetchGallery() {
 
   onGetGallery(hits);
 
-  
   if (isShown < totalHits || isShown < 40) {
     Notify.success(`Hooray! We found ${totalHits} images!`);
-    loadMoreBtn.classList.remove('is-hidden');
-  } else {
-    loadMoreBtn.classList.add('is-hidden');
-  }
-  if (isShown >= totalHits) {
-   Notify.info("We're sorry, but you've reached the end of search results.");
+  } 
+  const lastPage = Math.ceil(totalHits / pixabayApi.PER_PAGE)
+  if (pixabayApi.page === lastPage) {
+    Notify.info("We're sorry, but you've reached the end of search results.");
+    observer.unobserve(scroll);
   }
 }
+
 
 function onGetGallery(elements) {
   const markup = elements
